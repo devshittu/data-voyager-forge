@@ -1,0 +1,12 @@
+Scrapy
+lxml_html_clean
+newspaper3k
+scrapy-redis
+celery
+celery[billiard,redis]
+redis
+elasticsearch
+elasticsearch-dsl
+scrapy-rotating-proxies
+scrapy-splash
+selenium
