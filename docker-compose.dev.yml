@@ -1,28 +1,21 @@
 services:
-  scraper:
+  celery_beat:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: scraper
-    image: nex-probe-image:0.0.1
+    container_name: celery_beat
+    command: celery -A scraper.tasks beat --loglevel=info
+    environment:
+      - PYTHONPATH=/scraper:/
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
     depends_on:
       - redis
-      - elasticsearch
-    command: scrapy crawl news_spider
     volumes:
       - .:/scraper
-      - logs_volume:/scraper/logs
-    
-    # Set envrionment variables based on the .env file
-    env_file:
-      - .env
     networks:
       - my_probe_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+
   redis:
     image: redis:alpine
     container_name: redis
@@ -42,8 +35,11 @@ services:
     command: celery -A scraper.tasks worker --loglevel=info
     environment:
       - PYTHONPATH=/scraper:/
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
     depends_on:
       - redis
+      - elasticsearch
     volumes:
       - .:/scraper
     networks:
@@ -58,8 +54,11 @@ services:
     command: celery -A scraper.tasks worker --loglevel=info
     environment:
       - PYTHONPATH=/scraper:/
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
     depends_on:
       - redis
+      - elasticsearch
     volumes:
       - .:/scraper
     networks:
