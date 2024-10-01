@@ -1,6 +1,3 @@
-I see the correction you're pointing out regarding the Celery app. Below is the updated version of the `README.md` to reflect the correct command and context for running the tasks.
-
----
 
 ## **Project: Nex-Probe Web Scraper**
 
