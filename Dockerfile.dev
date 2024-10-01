@@ -1,21 +1,55 @@
-# Use Python image
-FROM python:3.9-slim
+FROM python:3.10-slim-bullseye
 
-# Set working directory inside the scraper project folder
 WORKDIR /scraper
 
 # Install dependencies
+RUN apt-get update && \
+    apt-get install -y wget unzip gnupg build-essential curl jq
+
+# Install Chrome dependencies
+RUN apt-get install -y \
+    libxss1 libappindicator1 libgconf-2-4 \
+    fonts-liberation libasound2 libnspr4 libnss3 \
+    libx11-xcb1 libxtst6 lsb-release xdg-utils \
+    libgbm1 libnss3 libatk-bridge2.0-0 libgtk-3-0 \
+    libx11-xcb1 libxcb-dri3-0
+
+# Determine architecture
+ARG TARGETARCH
+ENV TARGETARCH ${TARGETARCH:-amd64}
+ENV PLATFORM="linux64"
+
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+    PLATFORM="linux-arm64"; \
+    fi && \
+    echo "Architecture: $TARGETARCH, Platform: $PLATFORM"
+
+# Fetch the latest versions of Chrome and ChromeDriver
+RUN curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json > /tmp/versions.json && \
+    CHROME_URL=$(jq -r '.channels.Stable.downloads.chrome[] | select(.platform=="'"$PLATFORM"'") | .url' /tmp/versions.json) && \
+    wget -q --continue -O /tmp/chrome.zip "$CHROME_URL" && \
+    unzip /tmp/chrome.zip -d /opt/chrome && \
+    chmod +x /opt/chrome/chrome-"$PLATFORM"/chrome && \
+    CHROMEDRIVER_URL=$(jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform=="'"$PLATFORM"'") | .url' /tmp/versions.json) && \
+    wget -q --continue -O /tmp/chromedriver.zip "$CHROMEDRIVER_URL" && \
+    unzip /tmp/chromedriver.zip -d /opt/chromedriver && \
+    chmod +x /opt/chromedriver/chromedriver-"$PLATFORM"/chromedriver
+
+# Set up ChromeDriver environment variables
+ENV CHROME_BIN=/opt/chrome/chrome-${PLATFORM}/chrome
+ENV CHROMEDRIVER_DIR=/opt/chromedriver/chromedriver-${PLATFORM}
+ENV PATH=$CHROMEDRIVER_DIR:$PATH
+
+# Clean up
+RUN rm /tmp/chrome.zip /tmp/chromedriver.zip /tmp/versions.json
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the project files into the container
+# Copy your application code
 COPY . .
 
-# Default command to keep the container running
-# CMD ["bash"]
-
-# Run the crawler when the container launches.
-CMD [ "python3", "./go-spider.py" ]
-
+CMD ["bash"]
 
 # Dockerfile.dev
