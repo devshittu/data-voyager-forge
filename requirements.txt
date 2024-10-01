@@ -10,3 +10,7 @@ elasticsearch-dsl
 scrapy-rotating-proxies
 scrapy-splash
 selenium
+python3-wappalyzer
+scrapy-selenium
+webdriver-manager
+scrapy-user-agents
