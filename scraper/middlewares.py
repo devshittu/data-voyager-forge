@@ -4,7 +4,9 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
-
+from scrapy_selenium import SeleniumMiddleware as ScrapySeleniumMiddleware
+import random
+import logging
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 
@@ -101,3 +103,29 @@ class ScraperDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+class SeleniumMiddleware(ScrapySeleniumMiddleware):
+    def process_request(self, request, spider):
+        # Optionally customize Selenium requests here
+        return super().process_request(request, spider)
+
+
+class ProxyMiddleware:
+    def process_request(self, request, spider):
+        proxy = self.get_random_proxy()
+        if proxy:
+            request.meta['proxy'] = proxy
+            spider.logger.debug(f"Using proxy: {proxy}")
+
+    def get_random_proxy(self):
+        # Implement your proxy list retrieval logic here
+        proxy_list = [
+            'http://proxy1:port',
+            'http://proxy2:port',
+            # Add more proxies
+        ]
+        if proxy_list:
+            return random.choice(proxy_list)
+        else:
+            return None
